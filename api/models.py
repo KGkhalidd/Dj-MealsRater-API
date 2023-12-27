@@ -2,12 +2,20 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Avg
 
 class Meal(models.Model):
     #id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=50)
     description = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
+
+    def no_of_ratings(self):
+        ratings = Rating.objects.filter(meal=self).count()
+        return ratings
+    
+    def avg_rating(self):
+        return Rating.objects.filter(meal=self).aggregate(Avg('stars'))['stars__avg'] or 0
 
     class Meta:
         ordering = ['-created']
