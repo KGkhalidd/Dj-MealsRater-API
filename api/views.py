@@ -7,10 +7,14 @@ from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import  AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
 
 class MealViewSet(viewsets.ModelViewSet):
     queryset = Meal.objects.all()
     serializer_class = MealSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['POST'])
     def meal_rater(self, request, pk=None):
@@ -20,8 +24,9 @@ class MealViewSet(viewsets.ModelViewSet):
             '''
             meal = Meal.objects.get(id=pk)
             stars = request.data['stars']
-            username = request.data['username']
-            user = User.objects.get(username=username)
+            user = request.user
+            # username = request.data['username']
+            # user = User.objects.get(username=username)
             
             try:
                 # update
@@ -56,5 +61,16 @@ class MealViewSet(viewsets.ModelViewSet):
 class RatingViewSet(viewsets.ModelViewSet):
     queryset = Rating.objects.all()
     serializer_class = RatingSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    # override update method to prevent update of rating by user by sending bad request
+    def update(self, request, *args, **kwargs):
+        response = {'message': 'you cant update rating like that'}
+        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    # override create method to prevent creation of rating by user by sending bad request
+    def create(self, request, *args, **kwargs):
+        response = {'message': 'you cant create rating like that'}
+        return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
